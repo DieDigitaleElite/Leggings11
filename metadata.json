@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Copy of Shopware Virtual Leggings Try-On",
+  "description": "An innovative virtual try-on application for Shopware stores. Customers can upload their photo and instantly see themselves wearing selected leggings using advanced Gemini AI image synthesis.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

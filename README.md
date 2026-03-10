@@ -1,11 +1,14 @@
-<div align="center">
+# Shopware Virtual Try-On App
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+## 🚀 Hosting auf Vercel
 
-  <h1>Built with AI Studio</h2>
+### WICHTIG für den Upload:
+Wenn du die Dateien manuell bei GitHub hochlädst, achte bitte penibel auf die Ordnerstruktur:
+1. `App.tsx`, `index.tsx`, `package.json`, `tsconfig.json` usw. liegen im **Hauptordner**.
+2. Erstelle einen Unterordner namens `components` und lege `ProductCard.tsx` sowie `StepIndicator.tsx` dort hinein.
+3. Erstelle einen Unterordner namens `services` und lege `geminiService.ts` dort hinein.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+Vercel kann die Dateien nur finden, wenn sie in den richtigen Ordnern liegen.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
-
-</div>
+### API Key
+Vergiss nicht, in den Vercel Project Settings unter **Environment Variables** den Key `API_KEY` mit deinem Wert von Google AI Studio zu hinterlegen.
