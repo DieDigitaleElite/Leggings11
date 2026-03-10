@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { Product, TryOnState } from './types';
 import { MOCK_PRODUCTS, AVAILABLE_SIZES } from './constants';
-import { performVirtualTryOn, fileToBase64, urlToBase64, estimateSizeFromImage } from './services/geminiService';
+import { performVirtualTryOn, fileToBase64, urlToBase64 } from './services/geminiService';
 import ProductCard from './components/ProductCard';
 import StepIndicator from './components/StepIndicator';
 

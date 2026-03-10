@@ -1,14 +1,5 @@
 
-import { GoogleGenAI, HarmBlockThreshold, HarmCategory } from "@google/genai";
 import { APP_CONFIG } from "../constants";
-
-const SAFETY_SETTINGS = [
-  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-];
 
 async function optimizeImage(base64: string, maxWidth = 1024): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -36,93 +27,56 @@ async function optimizeImage(base64: string, maxWidth = 1024): Promise<string> {
   });
 }
 
-function getCleanBase64(dataUrl: string): string {
-  return dataUrl.replace(/^data:[^;]+;base64,/, "");
-}
-
-function getAI() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey === "undefined") {
-    throw new Error("INVALID_KEY");
-  }
-  return new GoogleGenAI({ apiKey });
-}
-
 export interface TryOnResult {
   image: string;
   size: string;
 }
 
-export async function performVirtualTryOn(userBase64: string, productBase64: string, productName: string): Promise<TryOnResult> {
+export async function performVirtualTryOn(userBase64: string, productBase64: string, productName: string, retries = 2): Promise<TryOnResult> {
   const [optUser, optProduct] = await Promise.all([
     optimizeImage(userBase64, 1024),
     optimizeImage(productBase64, 1024)
   ]);
 
-  const ai = getAI();
-  try {
-    const response = await ai.models.generateContent({
-      model: APP_CONFIG.IMAGE_MODEL,
-      contents: {
-        parts: [
-          { text: `VIRTUAL TRY-ON & SIZE ESTIMATION TASK:
-          - IMAGE 1: The person to be dressed.
-          - IMAGE 2: The target outfit (${productName}).
-          
-          YOUR MISSION:
-          1. SIZE: Analyze the person's body in IMAGE 1 and determine the best size (XS, S, M, L, XL, XXL) for the product in IMAGE 2.
-          2. IMAGE: Generate a new image where the person from IMAGE 1 is wearing the EXACT clothing from IMAGE 2.
-          
-          REQUIREMENTS:
-          - Replace clothes in IMAGE 1 with IMAGE 2.
-          - Keep person's face, hair, and background identical.
-          - Return the size as text and the result as an image part.` },
-          { inlineData: { data: getCleanBase64(optUser), mimeType: "image/jpeg" } },
-          { inlineData: { data: getCleanBase64(optProduct), mimeType: "image/jpeg" } },
-        ],
-      },
-      config: { 
-        imageConfig: { aspectRatio: "3:4" },
-        safetySettings: SAFETY_SETTINGS
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const response = await fetch("/api/tryon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userImage: optUser,
+          productImage: optProduct,
+          productName
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Server Error");
       }
-    });
 
-    const candidates = response.candidates;
-    if (!candidates || candidates.length === 0) {
-      throw new Error("Keine Antwort von der KI.");
-    }
-
-    const firstCandidate = candidates[0];
-    if (firstCandidate.finishReason === 'SAFETY') {
-      throw new Error("SAFETY_BLOCK");
-    }
-
-    const parts = firstCandidate.content?.parts || [];
-    
-    // Extract Size
-    let recommendedSize = 'M';
-    const textPart = parts.find(p => p.text);
-    if (textPart?.text) {
-      const sizeMatch = textPart.text.match(/\b(XS|S|M|L|XL|XXL)\b/i);
-      if (sizeMatch) recommendedSize = sizeMatch[0].toUpperCase();
-    }
-
-    // Extract Image
-    const imagePart = parts.find(p => p.inlineData);
-    if (imagePart?.inlineData?.data) {
+      const result = await response.json();
       return {
-        image: `data:image/jpeg;base64,${imagePart.inlineData.data}`,
-        size: recommendedSize
+        image: result.image,
+        size: result.size
       };
+    } catch (err: any) {
+      const errorStr = err.message.toLowerCase();
+      const isRateLimit = errorStr.includes("429") || errorStr.includes("exhausted");
+      
+      if (isRateLimit && i < retries) {
+        console.log(`Rate limit hit, retrying in ${Math.pow(2, i)} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+        continue;
+      }
+      
+      if (err.message === "SAFETY_BLOCK") {
+        throw new Error("Bild aus Sicherheitsgründen abgelehnt.");
+      }
+      throw err;
     }
-
-    throw new Error("Kein Bild generiert.");
-  } catch (err: any) {
-    if (err.message === "SAFETY_BLOCK") {
-      throw new Error("Bild aus Sicherheitsgründen abgelehnt.");
-    }
-    throw err;
   }
+  throw new Error("Maximale Versuche erreicht.");
 }
 
 export async function fileToBase64(file: File): Promise<string> {
