@@ -37,9 +37,13 @@ const App: React.FC = () => {
 
     try {
       const productBase64 = await urlToBase64(state.selectedProduct.imageUrl);
-      const size = await estimateSizeFromImage(state.userImage, state.selectedProduct.name);
-      const image = await performVirtualTryOn(state.userImage, productBase64, state.selectedProduct.name);
-      setState(prev => ({ ...prev, resultImage: image, recommendedSize: size, isLoading: false }));
+      const result = await performVirtualTryOn(state.userImage, productBase64, state.selectedProduct.name);
+      setState(prev => ({ 
+        ...prev, 
+        resultImage: result.image, 
+        recommendedSize: result.size, 
+        isLoading: false 
+      }));
     } catch (err: any) {
       console.error(err);
       let errorMessage = "KI-Fehler. Bitte versuche ein anderes Foto.";
