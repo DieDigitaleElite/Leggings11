@@ -87,19 +87,21 @@ export async function performVirtualTryOn(userBase64: string, productBase64: str
       model: APP_CONFIG.IMAGE_MODEL,
       contents: {
         parts: [
-          { text: `STRICT FASHION VIRTUAL TRY-ON - NO HALLUCINATIONS ALLOWED:
-          1. TARGET: Person in IMAGE 1.
-          2. SOURCE OUTFIT: Exact garment(s) shown in IMAGE 2 (${productName}).
+          { text: `VIRTUAL TRY-ON TASK:
+          - IMAGE 1: The person who needs to be dressed.
+          - IMAGE 2: The target outfit (${productName}).
           
-          CRITICAL RULES:
-          - IDENTICAL DESIGN: You must apply the EXACT design, cut, and garment type from IMAGE 2. 
-          - SLEEVE REPLACEMENT: Replace the original sleeves from IMAGE 1 with the exact sleeve style from IMAGE 2. If IMAGE 2 is sleeveless or has different sleeves, you MUST modify the person's arms/shoulders to match IMAGE 2 perfectly.
-          - NO STYLE CHANGES: If IMAGE 2 shows leggings, the result MUST be leggings. If IMAGE 2 shows a one-piece swimsuit, the result MUST be a one-piece swimsuit. DO NOT add skirts, ruffles, or change the silhouette.
-          - COMPLETE DRESSING: The person must be fully dressed in the COMPLETE set from IMAGE 2 (e.g., both top and bottom if it's a set).
-          - PIXEL PERFECT COLORS: Use the exact colors and patterns from IMAGE 2.
-          - PRESERVE PERSON: Keep the face, hair, skin tone, pose, and background of the person in IMAGE 1 100% identical.
-          - NO CROPPING: Do not crop the image. Keep the full frame of IMAGE 1.
-          - REALISM: The fabric must wrap naturally around the body contours of the person in IMAGE 1.` },
+          YOUR MISSION:
+          Generate a new image where the person from IMAGE 1 is wearing the EXACT clothing shown in IMAGE 2.
+          
+          TECHNICAL REQUIREMENTS:
+          1. CLOTHING REPLACEMENT: Remove the current clothes of the person in IMAGE 1 and replace them with the outfit from IMAGE 2.
+          2. PERFECT MATCH: The colors, patterns, and cut (e.g., leggings, crop top, or one-piece swimsuit) must be identical to IMAGE 2.
+          3. ANATOMICAL REALISM: The new clothing must follow the body shape and pose of the person in IMAGE 1 perfectly.
+          4. PRESERVATION: Keep the person's face, hair, skin tone, and the background from IMAGE 1 exactly as they are.
+          5. NO ADDITIONS: Do not add any accessories, skirts, or extra layers that are not in IMAGE 2.
+          
+          Output only the resulting image.` },
           { inlineData: { data: getCleanBase64(optUser), mimeType: "image/jpeg" } },
           { inlineData: { data: getCleanBase64(optProduct), mimeType: "image/jpeg" } },
         ],
