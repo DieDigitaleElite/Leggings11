@@ -42,7 +42,15 @@ const App: React.FC = () => {
       setState(prev => ({ ...prev, resultImage: image, recommendedSize: size, isLoading: false }));
     } catch (err: any) {
       console.error(err);
-      const errorMessage = err.message || "KI-Fehler. Bitte versuche ein anderes Foto.";
+      let errorMessage = "KI-Fehler. Bitte versuche ein anderes Foto.";
+      
+      const errorStr = JSON.stringify(err).toLowerCase();
+      if (errorStr.includes("exhausted") || errorStr.includes("429") || (err.message && err.message.includes("exhausted"))) {
+        errorMessage = "Das Limit für KI-Anfragen wurde erreicht. Bitte warte ca. 1 Minute und versuche es dann erneut (Rate Limit).";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
       setState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
     }
   };
